@@ -2,11 +2,10 @@ import fs from "node:fs";
 import { Substreams, download, unpack } from "substreams";
 import { RabbitMq } from "./src/rabbitmq";
 import { timeout } from "./src/utils";
-import { EntityChange } from "./src/interfaces";
+import * as EntityChanges from "./src/EntityChanges";
 import { logger } from "./src/logger";
 
 // default substreams options
-export const MESSAGE_TYPE_NAME = 'substreams.entity.v1.EntityChanges';
 export const DEFAULT_SUBSTREAMS_API_TOKEN_ENV = 'SUBSTREAMS_API_TOKEN';
 export const DEFAULT_OUTPUT_MODULE = 'entity_out';
 export const DEFAULT_CURSOR_FILE = 'cursor.lock'
@@ -74,20 +73,17 @@ export async function run(spkg: string, options: {
     await rabbitMq.initQueue();
 
     // Find Protobuf message types from registry
-    const { registry } = unpack(binary);
-    const EntityChanges = registry.findMessage(MESSAGE_TYPE_NAME);
-    if (!EntityChanges) throw new Error(`Could not find [${MESSAGE_TYPE_NAME}] message type`);
+    const message = EntityChanges.findMessage(binary);
 
-    substreams.on("mapOutput", async (output: any) => {
-        if (!output.data.value.typeUrl.match(MESSAGE_TYPE_NAME)) return;
-        const decoded = EntityChanges.fromBinary(output.data.value.value);
+    substreams.on("mapOutput", async output => {
+        const decoded = EntityChanges.decode(message, output);
+        if ( !decoded ) return; // skip if not EntityChanges
 
         // Send messages to queue
-        for (const entityChanges of decoded.entityChanges as Array<EntityChange>) {
-            logger.info(entityChanges);
-            rabbitMq.sendToQueue(entityChanges);
+        for (const entityChange of decoded) {
+            logger.info(JSON.stringify(entityChange));
+            rabbitMq.sendToQueue(entityChange);
         }
-
     });
 
     substreams.on("cursor", cursor => {
