@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { Substreams, download, unpack } from "substreams";
 import { RabbitMq } from "./src/rabbitmq";
 import { timeout } from "./src/utils";
+import { EntityChange } from "./src/interfaces";
 
 // default substreams options
 export const MESSAGE_TYPE_NAME = 'substreams.entity.v1.EntityChanges';
@@ -81,7 +82,7 @@ export async function run(spkg: string, options: {
         const decoded = EntityChanges.fromBinary(output.data.value.value);
 
         // Send messages to queue
-        for (const entityChanges of decoded.entityChanges) {
+        for (const entityChanges of decoded.entityChanges as Array<EntityChange>) {
             console.log(entityChanges);
             rabbitMq.sendToQueue(entityChanges);
         }
