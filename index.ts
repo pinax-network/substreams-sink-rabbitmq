@@ -1,8 +1,7 @@
 import fs from "node:fs";
-import { Substreams, download, unpack } from "substreams";
+import { Substreams, download, EntityChanges } from "substreams";
 import { RabbitMq } from "./src/rabbitmq";
 import { timeout } from "./src/utils";
-import * as EntityChanges from "./src/EntityChanges";
 import { logger } from "./src/logger";
 
 // default substreams options
@@ -72,16 +71,10 @@ export async function run(spkg: string, options: {
     const rabbitMq = new RabbitMq(username, password, address, port);
     await rabbitMq.initQueue();
 
-    // Find Protobuf message types from registry
-    const message = EntityChanges.findMessage(binary);
-
-    substreams.on("mapOutput", async output => {
-        const decoded = EntityChanges.decode(message, output);
-        if ( !decoded ) return; // skip if not EntityChanges
-
-        // Send messages to queue
-        for (const entityChange of decoded) {
-            logger.info(JSON.stringify(entityChange));
+    // Send messages to queue
+    substreams.on("anyMessage", (message: EntityChanges) => {
+        for (const entityChange of message.entityChanges) {
+            console.log(JSON.stringify(message));
             rabbitMq.sendToQueue(entityChange);
         }
     });

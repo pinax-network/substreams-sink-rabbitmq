@@ -42,7 +42,7 @@
         "amqplib": "0.10.x",
         "commander": "10.x",
         "dotenv": "16.x",
-        "substreams": "0.4.x",
+        "substreams": "^0.5.1",
         "winston": "3.x"
     },
     "devDependencies": {
