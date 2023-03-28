@@ -3,6 +3,7 @@ import { Substreams, download, unpack } from "substreams";
 import { RabbitMq } from "./src/rabbitmq";
 import { timeout } from "./src/utils";
 import { EntityChange } from "./src/interfaces";
+import { logger } from "./src/logger";
 
 // default substreams options
 export const MESSAGE_TYPE_NAME = 'substreams.entity.v1.EntityChanges';
@@ -83,7 +84,7 @@ export async function run(spkg: string, options: {
 
         // Send messages to queue
         for (const entityChanges of decoded.entityChanges as Array<EntityChange>) {
-            console.log(entityChanges);
+            logger.info(entityChanges);
             rabbitMq.sendToQueue(entityChanges);
         }
 

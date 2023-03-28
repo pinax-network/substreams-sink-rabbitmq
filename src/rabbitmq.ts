@@ -50,7 +50,7 @@ export class RabbitMq {
 
                     this.channel!.ack(msg);
                 } else {
-                    console.log('Consumer cancelled by server'); // Change with proper error message
+                    logger.error('Consumer cancelled by server'); // Change with proper error message
                 }
             });
         }
