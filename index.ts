@@ -1,12 +1,13 @@
 import fs from "node:fs";
-import { Substreams, download, EntityChanges } from "substreams";
+import crypto from "node:crypto";
+import { Substreams, download } from "substreams";
 import { RabbitMq } from "./src/rabbitmq";
 import { timeout } from "./src/utils";
 import { logger } from "./src/logger";
 
 // default substreams options
 export const DEFAULT_SUBSTREAMS_API_TOKEN_ENV = 'SUBSTREAMS_API_TOKEN';
-export const DEFAULT_OUTPUT_MODULE = 'entity_out';
+export const DEFAULT_OUTPUT_MODULE = 'graph_out';
 export const DEFAULT_CURSOR_FILE = 'cursor.lock'
 export const DEFAULT_SUBSTREAMS_ENDPOINT = 'https://mainnet.eth.streamingfast.io:443';
 
@@ -57,6 +58,8 @@ export async function run(spkg: string, options: {
 
     // Download Substream from URL or IPFS
     const binary = await download(spkg);
+    const hash = crypto.createHash("sha256").update(binary).digest("hex")
+    logger.info("download complete", {hash});
 
     // Initialize Substreams
     const substreams = new Substreams(binary, outputModule, {
@@ -65,6 +68,7 @@ export async function run(spkg: string, options: {
         stopBlockNum: options.stopBlock,
         startCursor,
         authorization: substreams_api_token,
+        productionMode: true,
     });
 
     // Initialize RabbitMQ
@@ -72,11 +76,9 @@ export async function run(spkg: string, options: {
     await rabbitMq.initQueue();
 
     // Send messages to queue
-    substreams.on("anyMessage", (message: EntityChanges) => {
-        for (const entityChange of message.entityChanges) {
-            console.log(JSON.stringify(message));
-            rabbitMq.sendToQueue(entityChange);
-        }
+    substreams.on("anyMessage", message => {
+        logger.info(JSON.stringify({hash, outputModule, message}));
+        rabbitMq.sendToQueue({hash, outputModule, message});
     });
 
     substreams.on("cursor", cursor => {
