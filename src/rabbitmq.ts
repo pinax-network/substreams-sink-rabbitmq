@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "substreams-sink";
 import client, { Connection, Channel } from "amqplib";
 
 const QUEUE_NAME: string = 'messages'; // Replace with map module hash (needs update from 'substreams-js' lib)
