@@ -1,11 +1,7 @@
 import { logger } from "substreams-sink";
 import client, { Connection, Channel } from "amqplib";
 
-const QUEUE_NAME: string = 'messages'; // Replace with map module hash (needs update from 'substreams-js' lib)
-
-type ConsumeFunction = {
-    (message: string): Promise<void>;
-};
+const EXCHANGE_NAME: string = 'headers-exchange';
 
 export class RabbitMq {
     private readonly username: string;
@@ -15,6 +11,7 @@ export class RabbitMq {
 
     private connection?: Connection;
     private channel?: Channel;
+    private isInit: boolean = false;
 
     constructor(username: string, password: string, address: string, port: number) {
         this.username = username;
@@ -23,36 +20,36 @@ export class RabbitMq {
         this.port = port;
     }
 
-    public async initQueue() {
+    public async init() {
         this.connection = await client.connect(`amqp://${this.username}:${this.password}@${this.address}:${this.port}`);
-
         this.channel = await this.connection.createChannel();
-        await this.channel.assertQueue(QUEUE_NAME);
+
+        await this.channel.assertExchange(EXCHANGE_NAME, 'headers', { durable: false });
+
+        this.isInit = true;
     }
 
-    public sendToQueue(message: any) {
-        if (!this.channel) {
-            // err
-        } else {
-            this.channel.sendToQueue(QUEUE_NAME, Buffer.from(JSON.stringify(message)));
+    public sendToQueue(message: any, opts: client.Options.Publish) {
+        if (!this.isInit) {
+            logger.error(JSON.stringify({ message: 'RabbitMQ not initialized. You need to run RabbitMq.init() first.' }));
         }
+
+        this.channel!.publish(EXCHANGE_NAME, '', Buffer.from(JSON.stringify(message)), opts);
     }
 
-    public async consumeQueue(fn: ConsumeFunction) {
-        if (!this.channel) {
-            // err
-        } else {
-            await this.channel.consume(QUEUE_NAME, async (msg) => {
-                if (msg !== null) {
-                    await fn(msg.content.toString());
+    public async consumeTest() {
+        await this.channel!.assertExchange(EXCHANGE_NAME, 'headers', {
+            durable: false
+        });
 
-                    // Handle rate limiting here
+        const q = await this.channel!.assertQueue('', { exclusive: true });
 
-                    this.channel!.ack(msg);
-                } else {
-                    logger.error('Consumer cancelled by server'); // Change with proper error message
-                }
-            });
-        }
+        await this.channel!.bindQueue(q.queue, EXCHANGE_NAME, '');
+
+        await this.channel!.consume(q.queue, (msg: any) => {
+            if (msg !== null) {
+                console.log(msg.content.toString());
+            }
+        });
     }
 }

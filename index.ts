@@ -1,5 +1,6 @@
-import { download, createHash } from "substreams";
+import { download, createHash, Clock } from "substreams";
 import { run, logger, RunOptions } from "substreams-sink";
+import client from "amqplib";
 
 import pkg from "./package.json";
 
@@ -32,15 +33,23 @@ export async function action(manifest: string, moduleName: string, options: Acti
 
     // Initialize RabbitMQ
     const rabbitMq = new RabbitMq(username, password, address, port);
-    await rabbitMq.initQueue();
+    await rabbitMq.init();
     console.log(`Connecting to RabbitMQ: ${address}:${port}`);
 
     // Run substreams
     const substreams = run(spkg, moduleName, options);
-    substreams.on("anyMessage", message => {
-        logger.info(JSON.stringify({ hash, outputModule: substreams.outputModule, message }));
-        rabbitMq.sendToQueue({ hash, outputModule: substreams.outputModule, message });
+
+    substreams.on("anyMessage", async (message, _: Clock, typeName: string) => {
+        const opts: client.Options.Publish = { headers: { hash, typeName } };
+
+        // console.log({ hash, outputModule: substreams.outputModule, typeName, message: message });
+
+        rabbitMq.sendToQueue(message, opts);
+        // logger.info(JSON.stringify({ headers: opts.headers, message: message }));
+
     });
+
+    // await rabbitMq.consumeTest();
 
     substreams.start(options.delayBeforeStart);
 }
