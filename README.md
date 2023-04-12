@@ -34,8 +34,17 @@ $ substreams-sink-rabbitmq run [options] <spkg>
 
 ## Features
 
+### Substreams
+
 - Consume `*.spkg` from:
   - [x] Load URL or IPFS
   - [ ] Read from `*.spkg` local filesystem
   - [ ] Read from `substreams.yaml` local filesystem
 - [x] Handle `cursor` restart
+
+### RabbitMQ
+
+- [X] `direct` exchange type
+- [X] `fanout` exchange type
+- [X] `topic` exchange type with routing key
+- [X] `headers` exchange type with arguments

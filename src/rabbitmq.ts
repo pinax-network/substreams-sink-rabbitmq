@@ -29,31 +29,11 @@ export class RabbitMq {
         this.isInit = true;
     }
 
-    public sendToQueue(message: any, opts: client.Options.Publish) {
+    public sendToQueue(message: any, opts?: any) {
         if (!this.isInit) {
             logger.error(JSON.stringify({ message: 'RabbitMQ not initialized. You need to run RabbitMq.init() first.' }));
         }
 
-        this.channel!.publish(this.exchangeName!, '', Buffer.from(JSON.stringify(message)), opts);
-    }
-
-    public async consumeExample(exchangeName: string, exchangeType: string) {
-        await this.channel!.assertExchange(exchangeName, exchangeType, {
-            durable: false
-        });
-
-        const q = await this.channel!.assertQueue('', { exclusive: false });
-
-        // Only keeps messages from substream with corresponding 'hash' and of type 'LoggerOperations'
-        await this.channel!.bindQueue(q.queue, exchangeName, '', {
-            'hash': '3bce202508f8120728564d7d8265e3317fbbdf1ec623896865bbd6584e203f01',
-            'typeName': 'pinax.substreams.sink.winston.v1.LoggerOperations'
-        });
-
-        await this.channel!.consume(q.queue, (msg: any) => {
-            if (msg !== null) {
-                console.log(msg.content.toString());
-            }
-        });
+        this.channel!.publish(this.exchangeName!, opts.routingKey, Buffer.from(JSON.stringify(message)), opts);
     }
 }
