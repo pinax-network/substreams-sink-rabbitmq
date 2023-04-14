@@ -1,4 +1,4 @@
-import { download } from "substreams";
+import { createHash, download } from "substreams";
 import { run, logger, RunOptions } from "substreams-sink";
 
 import pkg from "./package.json";
@@ -13,7 +13,7 @@ export const DEFAULT_USERNAME = 'guest';
 export const DEFAULT_PASSWORD = 'guest';
 export const DEFAULT_ADDRESS = 'localhost';
 export const DEFAULT_PORT = 5672;
-export const DEFAULT_EXCHANGE_NAME = 'exchange';
+export const DEFAULT_EXCHANGE_NAME = 'exchange'; // TODO Replace with hash
 export const DEFAULT_EXCHANGE_TYPE = 'direct';
 
 // Custom user options interface
@@ -22,22 +22,21 @@ interface ActionOptions extends RunOptions {
     port: number;
     username: string;
     password: string;
-    exchangeName: string;
     exchangeType: string;
     routingKey: string;
-    values: string;
 }
 
 export async function action(manifest: string, moduleName: string, options: ActionOptions) {
     // Download substreams and create hash
     const spkg = await download(manifest);
+    const hash = createHash(spkg);
 
     // Get command options
-    const { address, port, username, password, exchangeName, exchangeType, routingKey, values } = options;
+    const { address, port, username, password, exchangeType, routingKey } = options;
 
     // Initialize RabbitMQ
     const rabbitMq = new RabbitMq(username, password, address, port);
-    await rabbitMq.init(exchangeName, exchangeType);
+    await rabbitMq.init(options.substreamsEndpoint!, exchangeType);
     console.log(`Connecting to RabbitMQ: ${address}:${port}`);
 
     // Run substreams
@@ -48,7 +47,7 @@ export async function action(manifest: string, moduleName: string, options: Acti
 
         switch (exchangeType) {
             case "headers": {
-                opts = { headers: JSON.parse(values) };
+                opts = { headers: { hash, moduleName } };
                 break;
             }
             case "topic": {
