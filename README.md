@@ -47,4 +47,4 @@ $ substreams-sink-rabbitmq run [options] <spkg>
 - [X] `direct` exchange type
 - [X] `fanout` exchange type
 - [X] `topic` exchange type with routing key
-- [X] `headers` exchange type with arguments
+- [X] `headers` exchange type
