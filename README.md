@@ -13,8 +13,7 @@
 ### Further resources
 
 - [**Substreams** documentation](https://substreams.streamingfast.io)
-
-### Protobuf
+- [**RabbitMQ** documentation](https://www.rabbitmq.com/documentation.html)
 
 ## CLI
 [**Use pre-built binaries**](https://github.com/pinax-network/substreams-sink-rabbitmq/releases)
