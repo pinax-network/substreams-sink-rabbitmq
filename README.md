@@ -44,7 +44,8 @@ $ substreams-sink-rabbitmq run [options] <spkg>
 
 ### RabbitMQ
 
-- [X] `direct` exchange type
-- [X] `fanout` exchange type
-- [X] `topic` exchange type with routing key
-- [X] `headers` exchange type
+- [X] Handle `direct` exchange type
+- [X] Handle `fanout` exchange type
+- [X] Handle `topic` exchange type with routing key
+- [X] Handle `headers` exchange type
+- [X] Handle `durable` exchange flag

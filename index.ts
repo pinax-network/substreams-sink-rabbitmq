@@ -13,8 +13,8 @@ export const DEFAULT_USERNAME = 'guest';
 export const DEFAULT_PASSWORD = 'guest';
 export const DEFAULT_ADDRESS = 'localhost';
 export const DEFAULT_PORT = 5672;
-export const DEFAULT_EXCHANGE_NAME = 'exchange'; // TODO Replace with hash
 export const DEFAULT_EXCHANGE_TYPE = 'direct';
+export const DEFAULT_EXCHANGE_DURABLE = false;
 
 // Custom user options interface
 interface ActionOptions extends RunOptions {
@@ -23,6 +23,7 @@ interface ActionOptions extends RunOptions {
     username: string;
     password: string;
     exchangeType: string;
+    exchangeDurable: boolean;
     routingKey: string;
 }
 
@@ -32,12 +33,12 @@ export async function action(manifest: string, moduleName: string, options: Acti
     const hash = createHash(spkg);
 
     // Get command options
-    const { address, port, username, password, exchangeType, routingKey } = options;
+    const { address, port, username, password, exchangeType, exchangeDurable, routingKey } = options;
 
     // Initialize RabbitMQ
     const rabbitMq = new RabbitMq(username, password, address, port);
-    await rabbitMq.init(options.substreamsEndpoint!, exchangeType);
-    console.log(`Connecting to RabbitMQ: ${address}:${port}`);
+    await rabbitMq.init(options.substreamsEndpoint!, exchangeType, { durable: exchangeDurable });
+    logger.info(`Connecting to RabbitMQ: ${address}:${port}`);
 
     // Run substreams
     const substreams = run(spkg, moduleName, options);
@@ -60,8 +61,6 @@ export async function action(manifest: string, moduleName: string, options: Acti
         }
 
         rabbitMq.sendToQueue(message, opts);
-        logger.info(JSON.stringify({ message: message }));
-
     });
 
     substreams.start(options.delayBeforeStart);

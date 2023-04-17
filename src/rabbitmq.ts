@@ -19,21 +19,33 @@ export class RabbitMq {
         this.port = port;
     }
 
-    public async init(exchangeName: string, exchangeType: string) {
-        this.connection = await client.connect(`amqp://${this.username}:${this.password}@${this.address}:${this.port}`);
-        this.channel = await this.connection.createChannel();
-        this.exchangeName = exchangeName;
+    public async init(exchangeName: string, exchangeType: string, exchangeOpts: any) {
 
-        await this.channel.assertExchange(this.exchangeName, exchangeType, { durable: false });
+        try {
+            this.connection = await client.connect(`amqp://${this.username}:${this.password}@${this.address}:${this.port}`);
+            this.channel = await this.connection.createChannel();
+
+            this.exchangeName = exchangeName;
+
+            await this.channel.assertExchange(this.exchangeName, exchangeType, exchangeOpts);
+        } catch (error) {
+            logger.error(`Unable to connect to RabbitMQ instance on ${this.address}:${this.port} and create channel.`);
+            process.exit(1);
+        }
 
         this.isInit = true;
     }
 
     public sendToQueue(message: any, opts?: any) {
         if (!this.isInit) {
-            logger.error(JSON.stringify({ message: 'RabbitMQ not initialized. You need to run RabbitMq.init() first.' }));
+            logger.error('RabbitMQ not initialized. You need to run RabbitMq.init() first.');
+            process.exit(1);
         }
 
-        this.channel!.publish(this.exchangeName!, opts.routingKey, Buffer.from(JSON.stringify(message)), opts);
+        message = JSON.stringify(message);
+
+        const published: boolean = this.channel!.publish(this.exchangeName!, opts && opts.routingKey ? opts.routingKey : '', Buffer.from(message), opts && opts.headers ? opts : undefined);
+        if (!published) logger.error('Unable to send message to queue.', message);
+        else logger.info(message); // TODO less logging
     }
 }
