@@ -1,6 +1,6 @@
 {
     "name": "substreams-sink-rabbitmq",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "description": "Substreams RabbitMQ sink module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -42,9 +42,8 @@
         "amqplib": "0.10.x",
         "commander": "10.x",
         "dotenv": "16.x",
-        "substreams": "^0.5.6",
-        "substreams-sink": "^0.2.0",
-        "winston": "3.x"
+        "substreams": "^0.7.2",
+        "substreams-sink": "0.4.x"
     },
     "devDependencies": {
         "@types/amqplib": "0.10.x",

@@ -5,7 +5,7 @@ import pkg from "./package.json";
 
 import { RabbitMq } from "./src/rabbitmq";
 
-logger.defaultMeta = { service: pkg.name };
+logger.setName(pkg.name);
 export { logger };
 
 // default user options
