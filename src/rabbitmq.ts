@@ -1,5 +1,6 @@
 import { logger } from "substreams-sink";
-import client, { Connection, Channel } from "amqplib";
+import type { Connection, Channel } from "amqplib";
+import client from "amqplib";
 
 export class RabbitMq {
     private readonly username: string;

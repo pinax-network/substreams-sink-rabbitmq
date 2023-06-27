@@ -1,9 +1,9 @@
-import { createHash, download } from "substreams";
-import { run, logger, RunOptions } from "substreams-sink";
+import { fetchSubstream, createHash } from "@substreams/core";
+import { run, logger, cli } from "substreams-sink";
 
-import pkg from "./package.json";
+import pkg from "./package.json" assert { type: "json" };
 
-import { RabbitMq } from "./src/rabbitmq";
+import { RabbitMq } from "./src/rabbitmq.js";
 
 logger.setName(pkg.name);
 export { logger };
@@ -17,7 +17,7 @@ export const DEFAULT_EXCHANGE_TYPE = 'direct';
 export const DEFAULT_EXCHANGE_DURABLE = false;
 
 // Custom user options interface
-interface ActionOptions extends RunOptions {
+interface ActionOptions extends cli.RunOptions {
     address: string;
     port: number;
     username: string;
@@ -27,10 +27,10 @@ interface ActionOptions extends RunOptions {
     routingKey: string;
 }
 
-export async function action(manifest: string, moduleName: string, options: ActionOptions) {
+export async function action(options: ActionOptions) {
     // Download substreams and create hash
-    const spkg = await download(manifest);
-    const hash = createHash(spkg);
+    const spkg = await fetchSubstream(options.manifest!);
+    const hash = await createHash(spkg.toBinary());
 
     // Get command options
     const { address, port, username, password, exchangeType, exchangeDurable, routingKey } = options;
@@ -41,14 +41,14 @@ export async function action(manifest: string, moduleName: string, options: Acti
     logger.info(`Connecting to RabbitMQ: ${address}:${port}`);
 
     // Run substreams
-    const substreams = run(spkg, moduleName, options);
+    const substreams = run(spkg, options);
 
     substreams.on("anyMessage", async (message) => {
         let opts: any | undefined;
 
         switch (exchangeType) {
             case "headers": {
-                opts = { headers: { hash, moduleName } };
+                opts = { headers: { hash, moduleName: options.moduleName } };
                 break;
             }
             case "topic": {

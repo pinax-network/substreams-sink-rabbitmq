@@ -1,9 +1,10 @@
 {
     "name": "substreams-sink-rabbitmq",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Substreams RabbitMQ sink module",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "type": "module",
     "bin": {
         "substreams-sink-rabbitmq": "dist/bin/cli.js"
     },
@@ -35,22 +36,18 @@
     "license": "MIT OR Apache-2.0",
     "scripts": {
         "prepublishOnly": "tsc",
-        "build": "tsup index.ts bin/cli.ts --dts",
-        "pkg": "ncc build bin/cli.ts -o build && pkg build/index.js"
+        "build": "tsc"
     },
     "dependencies": {
         "amqplib": "latest",
         "commander": "latest",
         "dotenv": "latest",
-        "substreams": "0.7.x",
-        "substreams-sink": "0.4.x"
+        "@substreams/core": "^0.1.10",
+        "substreams-sink": "^0.5.0"
     },
     "devDependencies": {
         "@tsconfig/recommended": "latest",
         "@types/amqplib": "latest",
-        "@vercel/ncc": "latest",
-        "pkg": "latest",
-        "tsup": "latest",
         "typescript": "latest"
     }
 }
